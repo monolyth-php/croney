@@ -1,6 +1,6 @@
 <?php
 
-namespace Croney;
+namespace Monolyth\Croney;
 
 class ErrorLogger
 {
