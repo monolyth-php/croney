@@ -10,7 +10,7 @@
         }
     ],
     "require-dev": {
-        "gentry/gentry": "^0.8.5"
+        "gentry/gentry": "^0.9.0"
     },
     "suggest": {
         "monolog/monolog": "Log task output somewhere more useful than STDERR"

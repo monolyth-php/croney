@@ -4,22 +4,22 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "1c2d48b18d28af2549cc707df4ecd7bf",
-    "content-hash": "de2f80fdfd9bb5998296c05a7f7d62f1",
+    "hash": "5038cc60c070b45beb47b40e92d36aac",
+    "content-hash": "8799dd0fd7d15df315fa135302ca3636",
     "packages": [],
     "packages-dev": [
         {
             "name": "gentry/gentry",
-            "version": "0.8.5",
+            "version": "0.9.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/gentry-php/gentry.git",
-                "reference": "610ad9fd9239a6d50f0ba654e926dbdff8461c74"
+                "reference": "11d28d21c4a5524c0b311bf5ffcc9c2562053396"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/gentry-php/gentry/zipball/610ad9fd9239a6d50f0ba654e926dbdff8461c74",
-                "reference": "610ad9fd9239a6d50f0ba654e926dbdff8461c74",
+                "url": "https://api.github.com/repos/gentry-php/gentry/zipball/11d28d21c4a5524c0b311bf5ffcc9c2562053396",
+                "reference": "11d28d21c4a5524c0b311bf5ffcc9c2562053396",
                 "shasum": ""
             },
             "require": {
@@ -51,7 +51,7 @@
                 }
             ],
             "description": "PHP unit test generation tools",
-            "time": "2016-03-12 08:34:51"
+            "time": "2016-03-17 17:51:20"
         },
         {
             "name": "jakoch/phantomjs-installer",
