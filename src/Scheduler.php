@@ -44,9 +44,19 @@ class Scheduler extends ArrayObject
      */
     public function process()
     {
+        global $argv;
+        $specific = null;
+        foreach ($argv as $arg) {
+            if (preg_match('@--job=(.*?)$@', $arg, $match)) {
+                $specific = $match[1];
+            }
+        }
         $start = time();
         $tmp = sys_get_temp_dir();
-        array_walk($this->jobs, function ($job, $idx) use ($tmp) {
+        array_walk($this->jobs, function ($job, $idx) use ($tmp, $specific) {
+            if (isset($specific) && $specific !== $idx) {
+                return;
+            }
             $fp = fopen("$tmp/".md5($idx).'.lock', 'w+');
             flock($fp, LOCK_EX);
             try {
