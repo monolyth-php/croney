@@ -224,3 +224,16 @@ If no logger was defined, all messages go to `STDERR`.
 The logger is available inside task callables via `$this->logger`, so individual
 tasks can also log to whatever you configured it with.
 
+## Development
+During development, you probably want to run tasks when testing (not just at a
+specific time), and also probably just a specific task. Croney as of version 0.3
+comes with two command line flags for this:
+
+`--all`
+Use this flag to run all tasks, regardless of specified scheduling. *Do not do
+this in production!*
+
+`--job=jobname`
+Run only the specified `jobname`. If the job is scheduled for particular times,
+you'll likely want to use this in conjunction with the `--all` flag.
+
