@@ -75,6 +75,10 @@ class Scheduler extends ArrayObject
      */
     public function at($datestring)
     {
+        global $argv;
+        if (in_array('--all', $argv)) {
+            return;
+        }
         $date = date($datestring, $this->now);
         if (!preg_match("@$date$@", date('Y-m-d H:i', $this->now))) {
             throw new NotDueException;
