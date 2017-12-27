@@ -57,6 +57,9 @@ class Scheduler extends ArrayObject
             if (isset($specific) && $specific !== $idx) {
                 return;
             }
+            if (in_array('--verbose', $argv) || in_array('-v', $argv)) {
+                echo "Starting $idx...";
+            }
             $fp = fopen("$tmp/".md5($idx).'.lock', 'w+');
             flock($fp, LOCK_EX);
             try {
@@ -67,6 +70,9 @@ class Scheduler extends ArrayObject
             }
             flock($fp, LOCK_UN);
             fclose($fp);
+            if (in_array('--verbose', $argv) || in_array('-v', $argv)) {
+                echo " [done]\n";
+            }
         });
         if (--$this->minutes) {
             $wait = max(60 - (time() - $start), 0);
