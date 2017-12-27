@@ -53,7 +53,7 @@ class Scheduler extends ArrayObject
         }
         $start = time();
         $tmp = sys_get_temp_dir();
-        array_walk($this->jobs, function ($job, $idx) use ($tmp, $specific) {
+        array_walk($this->jobs, function ($job, $idx) use ($tmp, $specific, $argv) {
             if (isset($specific) && $specific !== $idx) {
                 return;
             }
