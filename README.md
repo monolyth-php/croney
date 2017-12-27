@@ -235,5 +235,8 @@ this in production!*
 
 `--job=jobname`
 Run only the specified `jobname`. If the job is scheduled for particular times,
-you'll likely want to use this in conjunction with the `--all` flag.
+you'll likely want to use this in conjunction with the `--all` (or `-a`) flag.
+
+You might also want to receive some more verbose feedback on what's going on. To
+accomplish this, call your executable with the `--verbose` (or `-v`) flag.
 
