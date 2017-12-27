@@ -92,7 +92,7 @@ class Scheduler extends ArrayObject
     public function at($datestring)
     {
         global $argv;
-        if (in_array('--all', $argv)) {
+        if (in_array('--all', $argv) || in_array('-a', $argv)) {
             return;
         }
         $date = date($datestring, $this->now);
