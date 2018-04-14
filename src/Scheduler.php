@@ -44,7 +44,7 @@ class Scheduler extends ArrayObject
      * @param string $name
      * @param callable $job The job.
      */
-    public function offsetSet(string $name, callable $job)
+    public function offsetSet($name, $job)
     {
         if (!is_callable($job)) {
             throw new InvalidArgumentException('Each job must be callable');
