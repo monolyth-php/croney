@@ -87,7 +87,7 @@ class Scheduler extends ArrayObject
      *
      * @param string $datestring A string parsable by `date` that should match
      *  the current script runtime for the job to execute.
-     * @throws Croney\NotDueException if the task isn't due yet.
+     * @throws Monolyth\Croney\NotDueException if the task isn't due yet.
      */
     public function at($datestring)
     {
