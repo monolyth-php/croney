@@ -81,7 +81,12 @@ class Scheduler extends ArrayObject
                 $job->call($this);
             } catch (NotDueException $e) {
             } catch (Exception $e) {
-                $this->logger->addCritial($e->getMessage());
+                $this->logger->addCritial(sprintf(
+                    "%s in file %s on line %d",
+                    $e->getMessage(),
+                    $e->getFile(),
+                    $e->getLine()
+                ));
             }
             flock($fp, LOCK_UN);
             fclose($fp);
