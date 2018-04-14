@@ -14,6 +14,12 @@ class Scheduler extends ArrayObject
     private $jobs = [];
     private $logger;
 
+    /**
+     * Constructor. Optionally pass a Monolog\Logger.
+     *
+     * @param Monolyth\Logger|null $logger
+     * @return void
+     */
     public function __construct(Logger $logger = null)
     {
         set_time_limit(60);
@@ -21,7 +27,13 @@ class Scheduler extends ArrayObject
         $this->logger = isset($logger) ? $logger : new ErrorLogger;
     }
 
-    public function __get($property)
+    /**
+     * Getter. Only accepts `"logger"` as a property.
+     *
+     * @param string $property
+     * @return Monolog\Logger|null
+     */
+    public function __get(string $property)
     {
         return $property == 'logger' ? $this->logger : null;
     }
@@ -29,9 +41,10 @@ class Scheduler extends ArrayObject
     /**
      * Add a job to the schedule.
      *
+     * @param string $name
      * @param callable $job The job.
      */
-    public function offsetSet($name, $job)
+    public function offsetSet(string $name, callable $job)
     {
         if (!is_callable($job)) {
             throw new InvalidArgumentException('Each job must be callable');
@@ -41,8 +54,10 @@ class Scheduler extends ArrayObject
 
     /**
      * Process the schedule and run all jobs which are due.
+     *
+     * @return void
      */
-    public function process()
+    public function process() : void
     {
         global $argv;
         $specific = null;
@@ -87,9 +102,10 @@ class Scheduler extends ArrayObject
      *
      * @param string $datestring A string parsable by `date` that should match
      *  the current script runtime for the job to execute.
+     * @return void
      * @throws Monolyth\Croney\NotDueException if the task isn't due yet.
      */
-    public function at($datestring)
+    public function at(string $datestring) : void
     {
         global $argv;
         if (in_array('--all', $argv) || in_array('-a', $argv)) {
@@ -114,12 +130,10 @@ class Scheduler extends ArrayObject
      * make sure to round/truncate/check its value.
      *
      * @param int $minutes
+     * @return void
      */
-    public function setDuration($minutes)
+    public function setDuration(int $minutes) : void
     {
-        if (!is_integer($minutes)) {
-            throw new InvalidArgumentException('$minutes must be an integer.');
-        }
         $this->minutes = $minutes;
     }
 }
