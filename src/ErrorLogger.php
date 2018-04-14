@@ -4,7 +4,11 @@ namespace Monolyth\Croney;
 
 class ErrorLogger
 {
-    public function __call($name, array $args)
+    /**
+     * @param string $name
+     * @param array $args
+     */
+    public function __call(string $name, array $args)
     {
         if (preg_match('@^add[A-Z]@', $name)
             && isset($args[0])
