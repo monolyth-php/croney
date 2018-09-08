@@ -15,5 +15,16 @@ return function () : Generator {
         $scheduler->process();
         assert($run === true);
     };
+
+    /** A job scheduled for the future won't be run */
+    yield function () use ($scheduler) {
+        $run = false;
+        $scheduler['test'] = function () use (&$run) {
+            $this->at(date('Y-m-d H:i:s', strtotime('+1 day')));
+            $run = true;
+        };
+        $scheduler->process();
+        assert($run === false);
+    };
 };
 
