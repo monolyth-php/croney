@@ -17,7 +17,7 @@ class Scheduler extends ArrayObject
     /**
      * Constructor. Optionally pass a Monolog\Logger.
      *
-     * @param Monolyth\Logger|null $logger
+     * @param Monolog\Logger|null $logger
      * @return void
      */
     public function __construct(Logger $logger = null)
