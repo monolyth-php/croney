@@ -94,7 +94,7 @@ class Scheduler extends ArrayObject
                 echo " [done]\n";
             }
         });
-        if (--$this->minutes) {
+        if (--$this->minutes > 0) {
             $wait = max(60 - (time() - $start), 0);
             sleep($wait);
             $this->now += 60;
