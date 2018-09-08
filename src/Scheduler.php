@@ -24,7 +24,7 @@ class Scheduler extends ArrayObject
     {
         set_time_limit(60);
         $this->now = strtotime(date('Y-m-d H:i:00'));
-        $this->logger = isset($logger) ? $logger : new ErrorLogger;
+        $this->logger = $logger ?? new ErrorLogger;
     }
 
     /**
