@@ -96,7 +96,9 @@ class Scheduler extends ArrayObject
         });
         if (--$this->minutes > 0) {
             $wait = max(60 - (time() - $start), 0);
-            sleep($wait);
+            if (!getenv('TOAST')) {
+                sleep($wait);
+            }
             $this->now += 60;
             $this->process();
         }
