@@ -26,5 +26,16 @@ return function () : Generator {
         $scheduler->process();
         assert($run === false);
     };
+
+    /** We can override duration - setting to i2 will cause process to run twice */
+    yield function () use ($scheduler) {
+        $run = 0;
+        $scheduler['test'] = function () use (&$run) {
+            $run++;
+        };
+        $scheduler->setDuration(2);
+        $scheduler->process();
+        assert($run === 2);
+    };
 };
 
