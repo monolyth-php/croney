@@ -9,9 +9,13 @@ use Monolog\Logger;
 
 class Scheduler extends ArrayObject
 {
+    /** @var int */
     private $now;
+    /** @var int */
     private $minutes = 1;
+    /** @var array */
     private $jobs = [];
+    /** @var Monolog\Logger */
     private $logger;
 
     /**
