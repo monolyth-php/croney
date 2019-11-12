@@ -16,8 +16,9 @@
         "gentry/gentry": "^0.13.0",
         "toast/unit": "^1.3"
     },
-    "suggest": {
-        "monolog/monolog": "Log task output somewhere more useful than STDERR"
+    "suggests": {
+        "monolog/monolog": "Log task output somewhere more useful than STDERR",
+        "monolyth/cliff": "Command line script runner"
     },
     "autoload": {
         "psr-4": {
