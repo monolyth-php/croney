@@ -9,9 +9,13 @@ use Monolog\Logger;
 
 class Scheduler extends ArrayObject
 {
+    /** @var int */
     private $now;
+    /** @var int */
     private $minutes = 1;
+    /** @var array */
     private $jobs = [];
+    /** @var Monolog\Logger */
     private $logger;
 
     /**
@@ -22,7 +26,6 @@ class Scheduler extends ArrayObject
      */
     public function __construct(Logger $logger = null)
     {
-        set_time_limit(60);
         $this->now = strtotime(date('Y-m-d H:i:00'));
         $this->logger = $logger ?? new ErrorLogger;
     }
