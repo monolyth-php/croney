@@ -22,8 +22,11 @@ trait Timing
      */
     public function at(string $datestring) : void
     {
-        global $argv;
-        if (in_array('--all', $argv) || in_array('-a', $argv)) {
+        if (in_array('--all', $_SERVER['argv']) || in_array('-a', $_SERVER['argv'])) {
+            return;
+        }
+        if ($_SERVER['argv'][0] == 'vendor/bin/cliff') {
+            // Timing is irrelevant when called manually.
             return;
         }
         $date = date($datestring, $this->now);
