@@ -22,6 +22,9 @@ trait Timing
      */
     public function at(string $datestring) : void
     {
+        if (!isset($this->now)) {
+            $this->now = time();
+        }
         $options = Scheduler::getOptions();
         if ($options->getOption('a')) {
             return;
