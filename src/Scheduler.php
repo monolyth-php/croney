@@ -7,12 +7,11 @@ use Exception;
 use ArrayObject;
 use Monolog\Logger;
 
-class Scheduler extends ArrayObject
+class Scheduler extends ArrayObject implements Timeable, Durable
 {
-    /** @var int */
-    private $now;
-    /** @var int */
-    private $minutes = 1;
+    use Timing;
+    use Duration;
+
     /** @var array */
     private $jobs = [];
     /** @var Monolog\Logger */
@@ -105,46 +104,6 @@ class Scheduler extends ArrayObject
             $this->now += 60;
             $this->process();
         }
-    }
-
-    /**
-     * The job should run "at" the specified time.
-     *
-     * @param string $datestring A string parsable by `date` that should match
-     *  the current script runtime for the job to execute.
-     * @return void
-     * @throws Monolyth\Croney\NotDueException if the task isn't due yet.
-     */
-    public function at(string $datestring) : void
-    {
-        global $argv;
-        if (in_array('--all', $argv) || in_array('-a', $argv)) {
-            return;
-        }
-        $date = date($datestring, $this->now);
-        if (!preg_match("@$date$@", date('Y-m-d H:i', $this->now))) {
-            throw new NotDueException;
-        }
-    }
-
-    /**
-     * Set the number of minutes this process should run.
-     *
-     * All jobs are run every minute, hence setting this to '5' would cause the
-     * loop to run 5 times. After each loop, the scheduler `sleep`s for sixty
-     * seconds (minus the seconds it took the loop to run) before starting the
-     * next run.
-     *
-     * Note that this does not guarantee the scheduler will resume _exactly_ on
-     * the next minute. If your task involves handling based on e.g. `time()`,
-     * make sure to round/truncate/check its value.
-     *
-     * @param int $minutes
-     * @return void
-     */
-    public function setDuration(int $minutes) : void
-    {
-        $this->minutes = $minutes;
     }
 }
 
