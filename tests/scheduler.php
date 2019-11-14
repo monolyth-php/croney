@@ -1,10 +1,15 @@
 <?php
 
 use Monolyth\Croney\Scheduler;
+use Gentry\Gentry\Wrapper;
 
 /** Tests for the Croney scheduler */
 return function () : Generator {
-    $scheduler = new Scheduler;
+    $scheduler = Wrapper::createObject(Scheduler::class);
+
+    $this->beforeEach(function () use ($scheduler) {
+        $scheduler::overrideOptions([]);
+    });
 
     /** We can set a job which will be processed */
     yield function () use ($scheduler) {
