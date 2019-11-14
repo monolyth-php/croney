@@ -6,6 +6,7 @@ use InvalidArgumentException;
 use Exception;
 use ArrayObject;
 use Monolog\Logger;
+use GetOpt\GetOpt;
 
 class Scheduler extends ArrayObject implements Timeable, Durable
 {
@@ -62,18 +63,16 @@ class Scheduler extends ArrayObject implements Timeable, Durable
     public function process() : void
     {
         $specific = null;
-        foreach ($_SERVER['argv'] as $arg) {
-            if (preg_match('@--job=(.*?)$@', $arg, $match)) {
-                $specific = $match[1];
-            }
-        }
+        $options = self::getOptions();
+        $specific = $options->getOption('j');
         $start = time();
         $tmp = sys_get_temp_dir();
-        array_walk($this->jobs, function ($job, $idx) use ($tmp, $specific, $_SERVER['argv']) {
+        $verbose = $options->getOption('v');
+        array_walk($this->jobs, function ($job, $idx) use ($tmp, $specific, $verbose) {
             if (isset($specific) && $specific !== $idx) {
                 return;
             }
-            if (in_array('--verbose', $_SERVER['argv']) || in_array('-v', $_SERVER['argv'])) {
+            if ($verbose) {
                 echo "Starting $idx...";
             }
             $fp = fopen("$tmp/".md5($idx).'.lock', 'w+');
@@ -91,7 +90,7 @@ class Scheduler extends ArrayObject implements Timeable, Durable
             }
             flock($fp, LOCK_UN);
             fclose($fp);
-            if (in_array('--verbose', $_SERVER['argv']) || in_array('-v', $_SERVER['argv'])) {
+            if ($verbose) {
                 echo " [done]\n";
             }
         });
@@ -103,6 +102,24 @@ class Scheduler extends ArrayObject implements Timeable, Durable
             $this->now += 60;
             $this->process();
         }
+    }
+
+    /**
+     * Get all CLI options for the scheduler.
+     *
+     * @return GetOpt\GetOpt
+     */
+    public static function getOptions() : GetOpt
+    {
+        static $options;
+        if (!isset($options)) {
+            $options = new GetOpt([
+                ['j', 'job', GetOpt::REQUIRED_ARGUMENT],
+                ['v', 'verbose', GetOpt::NO_ARGUMENT],
+            ]);
+            $options->process();
+        }
+        return $options;
     }
 }
 
