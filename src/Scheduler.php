@@ -61,20 +61,19 @@ class Scheduler extends ArrayObject implements Timeable, Durable
      */
     public function process() : void
     {
-        global $argv;
         $specific = null;
-        foreach ($argv as $arg) {
+        foreach ($_SERVER['argv'] as $arg) {
             if (preg_match('@--job=(.*?)$@', $arg, $match)) {
                 $specific = $match[1];
             }
         }
         $start = time();
         $tmp = sys_get_temp_dir();
-        array_walk($this->jobs, function ($job, $idx) use ($tmp, $specific, $argv) {
+        array_walk($this->jobs, function ($job, $idx) use ($tmp, $specific, $_SERVER['argv']) {
             if (isset($specific) && $specific !== $idx) {
                 return;
             }
-            if (in_array('--verbose', $argv) || in_array('-v', $argv)) {
+            if (in_array('--verbose', $_SERVER['argv']) || in_array('-v', $_SERVER['argv'])) {
                 echo "Starting $idx...";
             }
             $fp = fopen("$tmp/".md5($idx).'.lock', 'w+');
@@ -92,7 +91,7 @@ class Scheduler extends ArrayObject implements Timeable, Durable
             }
             flock($fp, LOCK_UN);
             fclose($fp);
-            if (in_array('--verbose', $argv) || in_array('-v', $argv)) {
+            if (in_array('--verbose', $_SERVER['argv']) || in_array('-v', $_SERVER['argv'])) {
                 echo " [done]\n";
             }
         });
