@@ -42,5 +42,12 @@ return function () : Generator {
         $scheduler->process();
         assert($run === 2);
     };
+
+    /** We can override options and get the currently set value */
+    yield function () use ($scheduler) {
+        $scheduler::overrideOptions(['--verbose']);
+        $options = $scheduler::getOptions();
+        assert($options->getOption('v') === 1);
+    };
 };
 
