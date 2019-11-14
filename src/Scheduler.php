@@ -116,6 +116,7 @@ class Scheduler extends ArrayObject implements Timeable, Durable
             $options = new GetOpt([
                 ['j', 'job', GetOpt::REQUIRED_ARGUMENT],
                 ['v', 'verbose', GetOpt::NO_ARGUMENT],
+                ['a', 'all', GetOpt::NO_ARGUMENT],
             ]);
             $options->process();
         }
