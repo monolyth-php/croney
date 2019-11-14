@@ -107,20 +107,21 @@ class Scheduler extends ArrayObject implements Timeable, Durable
     /**
      * Get all CLI options for the scheduler.
      *
+     * @param array|null $options Optional options override.
      * @return GetOpt\GetOpt
      */
-    public static function getOptions() : GetOpt
+    public static function getOptions(array $options = null) : GetOpt
     {
-        static $options;
-        if (!isset($options)) {
-            $options = new GetOpt([
+        static $getopt;
+        if (!isset($getopt)) {
+            $getopt = new GetOpt([
                 ['j', 'job', GetOpt::REQUIRED_ARGUMENT],
                 ['v', 'verbose', GetOpt::NO_ARGUMENT],
                 ['a', 'all', GetOpt::NO_ARGUMENT],
             ]);
-            $options->process();
+            $getopt->process($options);
         }
-        return $options;
+        return $getopt;
     }
 }
 
