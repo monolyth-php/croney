@@ -15,7 +15,8 @@
     },
     "require-dev": {
         "gentry/gentry": "^0.13.0",
-        "toast/unit": "^2.0"
+        "toast/unit": "^2.0",
+        "gentry/toast": "^0.1.0"
     },
     "suggests": {
         "monolog/monolog": "Log task output somewhere more useful than STDERR",
