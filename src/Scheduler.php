@@ -17,6 +17,10 @@ class Scheduler extends ArrayObject implements Timeable, Durable
     private $jobs = [];
     /** @var Monolog\Logger */
     private $logger;
+    /** @var GetOpt\GetOpt */
+    private static $getopt;
+    /** @var array|null */
+    private static $options = null;
 
     /**
      * Constructor. Optionally pass a Monolog\Logger.
@@ -63,7 +67,7 @@ class Scheduler extends ArrayObject implements Timeable, Durable
     public function process() : void
     {
         $specific = null;
-        $options = self::getOptions();
+        $options = $this->getOptions();
         $specific = $options->getOption('j');
         $start = time();
         $tmp = sys_get_temp_dir();
@@ -112,16 +116,29 @@ class Scheduler extends ArrayObject implements Timeable, Durable
      */
     public static function getOptions(array $options = null) : GetOpt
     {
-        static $getopt;
-        if (!isset($getopt)) {
-            $getopt = new GetOpt([
+        if (!isset(self::$getopt)) {
+            self::$getopt = new GetOpt([
                 ['j', 'job', GetOpt::REQUIRED_ARGUMENT],
                 ['v', 'verbose', GetOpt::NO_ARGUMENT],
                 ['a', 'all', GetOpt::NO_ARGUMENT],
             ]);
-            $getopt->process($options);
+            self::$getopt->process(self::$options);
         }
-        return $getopt;
+        return self::$getopt;
+    }
+
+    /**
+     * Override options. This is useful when calling the scheduler from a
+     * non-cron context, e.g. during tests or when your own cron script accepts
+     * different parameters.
+     *
+     * @param array|null $options Array of option overrides. Pass null to reset.
+     * @return void
+     */
+    public static function overrideOptions(array $options = null) : void
+    {
+        self::$options = $options;
+        self::$getopt = null;
     }
 }
 
