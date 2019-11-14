@@ -22,7 +22,8 @@ trait Timing
      */
     public function at(string $datestring) : void
     {
-        if (in_array('--all', $_SERVER['argv']) || in_array('-a', $_SERVER['argv'])) {
+        $options = Scheduler::getOptions();
+        if ($options->getOption('a')) {
             return;
         }
         if ($_SERVER['argv'][0] == 'vendor/bin/cliff') {
