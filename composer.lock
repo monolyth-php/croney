@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "5e13a2f5b5ec17a744b39265184f5628",
+    "content-hash": "59bb55afe2368bed720dd7497c692466",
     "packages": [
         {
             "name": "ulrichsg/getopt-php",
@@ -487,6 +487,34 @@
             ],
             "description": "PHP unit test generation tools",
             "time": "2019-10-05T16:01:09+00:00"
+        },
+        {
+            "name": "gentry/toast",
+            "version": "0.1.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/gentry-php/toast.git",
+                "reference": "c5b9ea4e7a3a683006ba182fe137f2455b5f264e"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/gentry-php/toast/zipball/c5b9ea4e7a3a683006ba182fe137f2455b5f264e",
+                "reference": "c5b9ea4e7a3a683006ba182fe137f2455b5f264e",
+                "shasum": ""
+            },
+            "type": "library",
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Marijn Ophorst",
+                    "email": "marijn@monomelodies.nl"
+                }
+            ],
+            "description": "Toast templates for Gentry",
+            "time": "2017-09-19T11:32:17+00:00"
         },
         {
             "name": "justinrainbow/json-schema",
