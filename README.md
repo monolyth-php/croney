@@ -58,8 +58,8 @@ $schedule = new Scheduler;
 ```
 
 ## Adding tasks
-The `Scheduler` extends `ArrayObject`, so to add a task simply set it. The value
-should be a callable:
+The `Scheduler` extends `ArrayObject`, so to add a task simply set it. The
+simplest way is to add a callable:
 
 ```
 #!/usr/bin/php
@@ -76,9 +76,9 @@ A task can be any callable, including class methods (even static ones), but the
 `$this` property is bound to the scheduler itself (for utility purposes as we'll
 see shortly), so it's usually best to use an actual lambda.
 
-> If your task is stored e.g. inside a class method, just call it from the
-> lambda instead of passing it directly. The usage of `$this` would be ambiguous
-> otherwise, which might lead to complications down the road.
+You can also pass a class name, which will then get instantiated and
+`__invoke`'d. If the passed class is an instance of `Monolyth\Cliff\Command`, it
+will be instantiated with empty options (i.e., `= new Command([])`).
 
 When you've setup all your tasks, call `process` on the `Scheduler` to actually
 run them:
@@ -229,11 +229,11 @@ During development, you probably want to run tasks when testing (not just at a
 specific time), and also probably just a specific task. Croney as of version 0.3
 comes with two command line flags for this:
 
-`--all`
+`--all|-a`
 Use this flag to run all tasks, regardless of specified scheduling. *Do not do
 this in production!*
 
-`--job=jobname`
+`--job=jobname|-jjobname`
 Run only the specified `jobname`. If the job is scheduled for particular times,
 you'll likely want to use this in conjunction with the `--all` (or `-a`) flag.
 
