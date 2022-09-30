@@ -56,11 +56,7 @@ class Scheduler extends ArrayObject implements Timeable, Durable
     public function offsetSet($name, $job)
     {
         if (is_string($job) && class_exists($job)) {
-            if ($job instanceof Command) {
-                $job = new $job([]);
-            } else {
-                $job = new $job;
-            }
+            $job = new $job;
         }
         if (!is_callable($job)) {
             throw new InvalidArgumentException('Each job must be callable');
