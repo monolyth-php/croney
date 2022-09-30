@@ -19,9 +19,11 @@ class Scheduler extends ArrayObject
     private static ?array $options = null;
 
     /**
-     * Constructor. Optionally pass a Monolog\Logger.
+     * Constructor. Optionally pass a Monolog\Logger and a duration (in
+     * minutes).
      *
      * @param Psr\Log\LoggerInterface|null $logger
+     * @param int $duration
      * @return void
      */
     public function __construct(private ?LoggerInterface $logger = null, private int $duration = 1)
@@ -31,12 +33,11 @@ class Scheduler extends ArrayObject
     }
 
     /**
-     * Getter. Only accepts `"logger"` as a property.
+     * Get the logger.
      *
-     * @param string $property
-     * @return Monolog\Logger|null
+     * @return Psr\Log\LoggerInterface
      */
-    public function __get(string $property)
+    public function getLogger(string $property) : LoggerInterface
     {
         return $property == 'logger' ? $this->logger : null;
     }
@@ -54,6 +55,9 @@ class Scheduler extends ArrayObject
         }
         if (!is_callable($job)) {
             throw new InvalidArgumentException('Each job must be callable');
+        }
+        if (is_numeric($name)) {
+            $this->logger->warning("Job $name has a numeric index; it is better to use named indexes.");
         }
         $this->jobs[$name] = $job;
     }
@@ -93,7 +97,7 @@ class Scheduler extends ArrayObject
                     $job();
                 }
             } catch (Exception $e) {
-                $this->logger->addCritial(sprintf(
+                $this->logger->critial(sprintf(
                     "%s in file %s on line %d",
                     $e->getMessage(),
                     $e->getFile(),
