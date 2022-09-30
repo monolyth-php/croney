@@ -5,32 +5,26 @@ namespace Monolyth\Croney;
 use InvalidArgumentException;
 use Exception;
 use ArrayObject;
-use Monolog\Logger;
+use Psr\Log\LoggerInterface;
 use GetOpt\GetOpt;
 use Monolyth\Cliff\Command;
 use Closure;
 
-class Scheduler extends ArrayObject implements Timeable, Durable
+class Scheduler extends ArrayObject
 {
-    use Timing;
-    use Duration;
+    private array $jobs = [];
 
-    /** @var array */
-    private $jobs = [];
-    /** @var Monolog\Logger */
-    private $logger;
-    /** @var GetOpt\GetOpt */
-    private static $getopt;
-    /** @var array|null */
-    private static $options = null;
+    private static GetOpt $getopt;
+
+    private static ?array $options = null;
 
     /**
      * Constructor. Optionally pass a Monolog\Logger.
      *
-     * @param Monolog\Logger|null $logger
+     * @param Psr\Log\LoggerInterface|null $logger
      * @return void
      */
-    public function __construct(Logger $logger = null)
+    public function __construct(private ?LoggerInterface $logger = null, private int $duration = 1)
     {
         $this->now = strtotime(date('Y-m-d H:i:00'));
         $this->logger = $logger ?? new ErrorLogger;
@@ -77,8 +71,13 @@ class Scheduler extends ArrayObject implements Timeable, Durable
         $start = time();
         $tmp = sys_get_temp_dir();
         $verbose = $options->getOption('v');
-        array_walk($this->jobs, function ($job, $idx) use ($tmp, $specific, $verbose) {
+        $always = $options->getOption('a');
+        array_walk($this->jobs, function ($job, $idx) use ($tmp, $specific, $verbose, $always) : void {
             if (isset($specific) && $specific !== $idx) {
+                return;
+            }
+            if (!$always && !$this->shouldRun($job)) {
+                echo "Skipping $idx due to RunAt configuration.\n";
                 return;
             }
             if ($verbose) {
@@ -86,13 +85,13 @@ class Scheduler extends ArrayObject implements Timeable, Durable
             }
             $fp = fopen("$tmp/".md5($idx).'.lock', 'w+');
             flock($fp, LOCK_EX);
+
             try {
                 if ($job instanceof Closure) {
                     $job->call($this);
                 } else {
                     $job();
                 }
-            } catch (NotDueException $e) {
             } catch (Exception $e) {
                 $this->logger->addCritial(sprintf(
                     "%s in file %s on line %d",
@@ -107,12 +106,10 @@ class Scheduler extends ArrayObject implements Timeable, Durable
                 echo " [done]\n";
             }
         });
-        if (--$this->minutes > 0) {
+        if (--$this->duration > 0) {
             $wait = max(60 - (time() - $start), 0);
-            if (!getenv('TOAST')) {
-                sleep($wait);
-            }
-            $this->now += 60;
+            sleep($wait);
+            $this->now = strtotime('+1 minute', date('Y-m-d H:i', $this->now));
             $this->process();
         }
     }
@@ -147,6 +144,21 @@ class Scheduler extends ArrayObject implements Timeable, Durable
     {
         self::$options = $options;
         self::$getopt = null;
+    }
+
+    private function shouldRun(object $job) : bool
+    {
+        if ($job instanceof Closure) {
+            $reflection = new ReflectionFunction($job);
+        } else {
+            $reflection = (new ReflectionObject($job))->getMethod('__invoke');
+        }
+        $attributes = $reflection->getAttributes(RunAt::class);
+        if ($attributes) {
+            $runat = $attributes[0]->getDatetimeString();
+        }
+        $date = date($runat, $this->now);
+        return preg_match("@$date$@", date('Y-m-d H:i', $this->now));
     }
 }
 
