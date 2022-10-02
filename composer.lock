@@ -161,16 +161,16 @@
         },
         {
             "name": "gentry/toast",
-            "version": "0.2.0",
+            "version": "0.2.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/gentry-php/toast.git",
-                "reference": "86a572f005ad897a05470ef8667c27d69b3f99d7"
+                "reference": "4eb1dae9240c6b0b31ac6e2d9a5e95f574768775"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/gentry-php/toast/zipball/86a572f005ad897a05470ef8667c27d69b3f99d7",
-                "reference": "86a572f005ad897a05470ef8667c27d69b3f99d7",
+                "url": "https://api.github.com/repos/gentry-php/toast/zipball/4eb1dae9240c6b0b31ac6e2d9a5e95f574768775",
+                "reference": "4eb1dae9240c6b0b31ac6e2d9a5e95f574768775",
                 "shasum": ""
             },
             "require": {
@@ -195,9 +195,9 @@
             "description": "Toast templates for Gentry",
             "support": {
                 "issues": "https://github.com/gentry-php/toast/issues",
-                "source": "https://github.com/gentry-php/toast/tree/0.2.0"
+                "source": "https://github.com/gentry-php/toast/tree/0.2.1"
             },
-            "time": "2022-09-26T13:59:15+00:00"
+            "time": "2022-10-02T16:34:29+00:00"
         },
         {
             "name": "monolyth/cliff",
