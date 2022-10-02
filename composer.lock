@@ -110,16 +110,16 @@
     "packages-dev": [
         {
             "name": "gentry/gentry",
-            "version": "0.16.0",
+            "version": "0.16.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/gentry-php/gentry.git",
-                "reference": "88e5ee5fb9525c1b52f6d2d7426bfda6a454008c"
+                "reference": "470e6aa9d50f1c794f6962fda3d14f2035c3e501"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/gentry-php/gentry/zipball/88e5ee5fb9525c1b52f6d2d7426bfda6a454008c",
-                "reference": "88e5ee5fb9525c1b52f6d2d7426bfda6a454008c",
+                "url": "https://api.github.com/repos/gentry-php/gentry/zipball/470e6aa9d50f1c794f6962fda3d14f2035c3e501",
+                "reference": "470e6aa9d50f1c794f6962fda3d14f2035c3e501",
                 "shasum": ""
             },
             "require": {
@@ -155,9 +155,9 @@
             "description": "PHP unit test generation tools",
             "support": {
                 "issues": "https://github.com/gentry-php/gentry/issues",
-                "source": "https://github.com/gentry-php/gentry/tree/0.16.0"
+                "source": "https://github.com/gentry-php/gentry/tree/0.16.1"
             },
-            "time": "2022-09-26T13:44:33+00:00"
+            "time": "2022-10-01T15:42:54+00:00"
         },
         {
             "name": "gentry/toast",
