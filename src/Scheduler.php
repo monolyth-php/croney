@@ -9,51 +9,47 @@ use Psr\Log\LoggerInterface;
 use GetOpt\GetOpt;
 use Monolyth\Cliff\Command;
 use Closure;
+use ReflectionFunction;
+use ReflectionObject;
 
 class Scheduler extends ArrayObject
 {
+    protected Sleeper $sleeper;
+
     private array $jobs = [];
 
-    private static GetOpt $getopt;
+    private static ?GetOpt $getopt;
 
     private static ?array $options = null;
 
     /**
-     * Constructor. Optionally pass a Monolog\Logger and a duration (in
-     * minutes).
+     * Constructor. Optionally pass a duration (in minutes) and a Logger
+     * implementing Psr\Log\LoggerInterface (e.g. Monolog\Logger).
      *
      * @param Psr\Log\LoggerInterface|null $logger
      * @param int $duration
      * @return void
      */
-    public function __construct(private ?LoggerInterface $logger = null, private int $duration = 1)
+    public function __construct(private int $duration = 1, private ?LoggerInterface $logger = null)
     {
-        $this->now = strtotime(date('Y-m-d H:i:00'));
         $this->logger = $logger ?? new ErrorLogger;
+        $this->sleeper = new Sleeper;
     }
 
     /**
-     * Get the logger.
-     *
-     * @return Psr\Log\LoggerInterface
-     */
-    public function getLogger(string $property) : LoggerInterface
-    {
-        return $property == 'logger' ? $this->logger : null;
-    }
-
-    /**
-     * Add a job to the schedule.
+     * Add a job to the schedule. Note the type hints do not reflect the actual
+     * requirements, to satisfy compatibility with ArrayObject::offsetSet.
      *
      * @param string $name
      * @param callable $job The job.
      */
-    public function offsetSet($name, $job)
+    public function offsetSet(mixed $name, mixed $job) : void
     {
         if (is_string($job) && class_exists($job)) {
             $job = new $job;
         }
         if (!is_callable($job)) {
+            $this->logger->critical("Job $name is not callable.");
             throw new InvalidArgumentException('Each job must be callable');
         }
         if (is_numeric($name)) {
@@ -91,11 +87,7 @@ class Scheduler extends ArrayObject
             flock($fp, LOCK_EX);
 
             try {
-                if ($job instanceof Closure) {
-                    $job->call($this);
-                } else {
-                    $job();
-                }
+                call_user_func($job);
             } catch (Exception $e) {
                 $this->logger->critial(sprintf(
                     "%s in file %s on line %d",
@@ -111,9 +103,7 @@ class Scheduler extends ArrayObject
             }
         });
         if (--$this->duration > 0) {
-            $wait = max(60 - (time() - $start), 0);
-            sleep($wait);
-            $this->now = strtotime('+1 minute', date('Y-m-d H:i', $this->now));
+            $this->sleeper->snooze(max(60 - (time() - $start), 0));
             $this->process();
         }
     }
@@ -150,19 +140,25 @@ class Scheduler extends ArrayObject
         self::$getopt = null;
     }
 
-    private function shouldRun(object $job) : bool
+    private function shouldRun(callable $job) : bool
     {
-        if ($job instanceof Closure) {
+        if ($job instanceof Closure || (is_string($job) && function_exists($job))) {
             $reflection = new ReflectionFunction($job);
         } else {
-            $reflection = (new ReflectionObject($job))->getMethod('__invoke');
+            if (is_array($job)) {
+                list($job, $method) = $job;
+            } else {
+                $method = '__invoke';
+            }
+            $reflection = (new ReflectionObject($job))->getMethod($method);
         }
         $attributes = $reflection->getAttributes(RunAt::class);
-        if ($attributes) {
-            $runat = $attributes[0]->getDatetimeString();
+        if (!$attributes) {
+            return true;
         }
-        $date = date($runat, $this->now);
-        return preg_match("@$date$@", date('Y-m-d H:i', $this->now));
+        $runAt = $attributes[0]->newInstance()->getDatetimeString();
+        $date = $this->sleeper->getDate($runAt);
+        return preg_match("@$date$@", $this->sleeper->getDate());
     }
 }
 
