@@ -131,10 +131,10 @@ class Scheduler extends ArrayObject
      * non-cron context, e.g. during tests or when your own cron script accepts
      * different parameters.
      *
-     * @param array|null $options Array of option overrides. Pass null to reset.
+     * @param array $options Array of option overrides.
      * @return void
      */
-    public static function overrideOptions(array $options = null) : void
+    public static function overrideOptions(array $options) : void
     {
         self::$options = $options;
         self::$getopt = null;
