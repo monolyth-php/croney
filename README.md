@@ -72,13 +72,11 @@ $schedule['some-task'] = function () {
 ```
 
 This task gets run every minute (or whatever interval you set your cronjob to).
-A task can be any callable, including class methods (even static ones), but the
-`$this` property is bound to the scheduler itself (for utility purposes as we'll
-see shortly), so it's usually best to use an actual lambda.
+A task can be any callable, including class methods (even static ones).
 
 You can also pass a class name, which will then get instantiated and
-`__invoke`'d. If the passed class is an instance of `Monolyth\Cliff\Command`, it
-will be instantiated with empty options (i.e., `= new Command([])`).
+`__invoke`'d. If you need to pass construction arguments, do the instantiating
+yourself.
 
 When you've setup all your tasks, call `process` on the `Scheduler` to actually
 run them:
@@ -91,29 +89,32 @@ $schedule->process();
 ```
 
 ## Running tasks at specific intervals or times
-To have more control over when exactly a task is run, you call the `at`
-method on the bound `$this` object:
+To have more control over when exactly a task is run, add the
+Monolyth\Croney\RunAt attribute to your invokable:
 
 ```
 <?php
 
-$scheduler['some-task'] = function () {
-    $this->at('Y-m-d H:m');
-};
+$scheduler['some-task'] =
+    #[Monolyth\Croney\RunAt("Y-m-d H:m")]
+    function () {
+        // ...
+    };
 ```
 
 The parameter to `at` is a PHP date string which, when parsed using the run's
-start time, should `preg_match` it. The above example runs the task every minute
-(which is the default assuming your cronjob runs every minute). To run a task
-every five minutes instead, you'd write something like this:
+current time, should `preg_match` it. The above example runs the task every
+minute (which is the default assuming your cronjob runs every minute). To run a
+task every five minutes instead, you'd write something like this:
 
 ```php
 <?php
 
-$scheduler['some-task'] = function () {
-    // Note the double escape for \d in the regex.
-    $this->at('Y-m-d H:[0-5][05]');
-};
+$scheduler['some-task'] =
+    #[Monolyth\Croney\RunAt("Y-m-d H:[0-5][05]")]
+    function () {
+        // ...
+    };
 ```
 
 Note that the `date` function works with placeholders, so if you need to regex
@@ -129,12 +130,10 @@ page for `date` for a list of all valid placeholders.
 
 Note that the seconds part is irrelevant due to the granularity of cron and
 should be omitted or your task will likely never run (since the date it is
-compared to also doesn't include seconds). Also note that `at` breaks off the
-task if it's not due yet, so it should in almost all cases be the first
-statement in a task.
+compared to also doesn't include seconds).
 
-> Any operations prior to `at` will always be executed. In rare cases this might
-> be intentional, but normally it really won't be. Trust us.
+Also note that if your task is an `__invoke`able object, the RunAt attribute
+should be on the `__invoke` method, not the object itself.
 
 ## Running the script less often
 We mentioned earlier how you can also choose to run the cronjob less often than
@@ -146,13 +145,13 @@ still be able to schedule tasks based on minutes?
 > An example of this would be a cronjob that runs every five minutes, defining
 > five tasks, each of which is run one minute after the previous task.
 
-On the `Scheduler` object, call the `setDuration` method. This takes a single
-integer parameter: the number of minutes the script is meant to run.
+The first parameter when constructing the Scheduler object is actually its
+duration (in minutes):
 
 ```php
 <?php
 
-$scheduler->setDuration(5); // Runs for five minutes
+$scheduler = new Scheduler(5); // Runs for five minutes
 ```
 
 (As you'll have guessed, the default value here is `1`.)
@@ -163,16 +162,20 @@ minute) and executed when the time is there. E.g.:
 ```php
 <?php
 
-// ...
+$scheduler = new Scheduler(5);
 
 // First task, runs only on the first loop
-$scheduler['first-task'] = function () {
-    $this->at('H:00');
-};
+$scheduler['first-task'] =
+    #[RunAt("H:[0-5]0")]
+    function () {
+        // ...
+    };
 // Second task, runs only on the second loop
-$scheduler['second-task'] = function () {
-    $this->at('H:01');
-};
+$scheduler['second-task']
+    #[RunAt("")]
+    = function () {
+        $this->at('H:[0-5]1');
+    };
 // etc.
 ```
 
@@ -215,14 +218,14 @@ The locking is done based on an MD5 hash of the reflected callable, so any
 changes between runs will invalidate any existing locks.
 
 ## Error handling
-You can pass an instance of `Monolog\Logger` as an argument to the `Scheduler`
-constructor. This will then be used to log any messages triggered by tasks, in
-the way that you specified.
+You can pass an instance of `Psr\Log\LoggerInterface` as an argument to the
+`Scheduler` constructor. This will then be used to log any messages triggered by
+tasks, in the way that you specified.
 
-If no logger was defined, all messages go to `STDERR`.
+If no logger was defined, all messages go to `STDOUT` or `STDERR`.
 
-The logger is available inside task callables via `$this->logger`, so individual
-tasks can also log to whatever you configured it with.
+Should your individual tasks also need logging, you'll need to supply them with
+their own instance of a logger.
 
 ## Development
 During development, you probably want to run tasks when testing (not just at a
@@ -240,3 +243,27 @@ you'll likely want to use this in conjunction with the `--all` (or `-a`) flag.
 You might also want to receive some more verbose feedback on what's going on. To
 accomplish this, call your executable with the `--verbose` (or `-v`) flag.
 
+If you need to test tasks in a longer running schedule, it's annoying to have
+to wait minutes before your tasks complete. In that case, simply override the
+scheduler's internal `sleeper` property. An example (that is actually used in
+the unit tests for Croney itself):
+
+```php
+<?php
+
+$scheduler = new class (2) extends Scheduler {
+    public function __construct(int $duration)
+    {
+        parent::__construct($duration);
+        $this->sleeper = new class () extends Sleeper {
+            public function snooze(int $seconds) : void
+            {
+                // parent implementation: simply `sleep($seconds)`
+                // next call is needed to realign the internal timer
+                // so RunAt attributes keep working.
+                $this->advanceInternalClock();
+            }
+        };
+    }
+};
+```
