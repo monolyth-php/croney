@@ -18,6 +18,7 @@ class Sleeper
     public function snooze(int $seconds) : void
     {
         sleep($seconds);
+        $this->advanceInternalClock();
     }
 
     protected function advanceInternalClock() : void
