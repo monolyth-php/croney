@@ -85,7 +85,7 @@ class Scheduler extends ArrayObject
             if ($verbose) {
                 $this->logger->info("Starting $idx...");
             }
-            $lockfile = "$tmp/croney.".md5($idx).'.lock';
+            $lockfile = "$tmp/croney.".md5(getcwd().':'.$idx).'.lock';
             if (file_exists($lockfile)) {
                 if ($verbose) {
                     $this->logger->warning("Couldn't aquire lock for $idx, skipping on this iteration.");
