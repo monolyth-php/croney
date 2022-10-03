@@ -1,14 +1,15 @@
 <?php
 
-use Monolyth\Croney\{ Scheduler, RunAt, Sleeper };
+use Monolyth\Croney\{ Scheduler, RunAt, Sleeper, TestLogger };
 use Gentry\Gentry\Wrapper;
+use Psr\Log\LoggerInterface;
 
 /** Tests for the Croney scheduler */
 return function () : Generator {
-    $scheduler = new Wrapper(new Scheduler);
+    $scheduler = new Wrapper(new Scheduler(1, new TestLogger));
 
     $this->beforeEach(function () use ($scheduler) {
-        $scheduler->overrideOptions([]);
+        $scheduler->overrideOptions(['-v']);
     });
 
     /** We can set a job which will be processed */
@@ -17,7 +18,9 @@ return function () : Generator {
         $scheduler->offsetSet('test', function () use (&$run) {
             $run = true;
         });
+        ob_start();
         $scheduler->process();
+        ob_end_clean();
         assert($run === true);
     };
 
@@ -34,16 +37,16 @@ return function () : Generator {
         $scheduler->process();
         $output = trim(ob_get_clean());
         assert($run === false);
-        assert($output === "Skipping test due to RunAt configuration.");
+        assert(strpos($output, "Skipping test due to RunAt configuration.") !== false);
     };
 
     /** We can override duration - setting to 2 will cause process to run twice */
     yield function () use ($scheduler) {
         $run = 0;
-        $scheduler = new Wrapper(new class (2) extends Scheduler {
-            public function __construct(int $duration)
+        $scheduler = new Wrapper(new class (2, new TestLogger) extends Scheduler {
+            public function __construct(int $duration, LoggerInterface $logger)
             {
-                parent::__construct($duration);
+                parent::__construct($duration, $logger);
                 $this->sleeper = new class () extends Sleeper {
                     public function snooze(int $seconds) : void
                     {
@@ -55,17 +58,19 @@ return function () : Generator {
         $scheduler->offsetSet('test', function () use (&$run) {
             $run++;
         });
+        ob_start();
         $scheduler->process();
+        ob_end_clean();
         assert($run === 2);
     };
 
     /** A job configured to only run on even minutes will be run once, even with duration=2 */
     yield function () use ($scheduler) {
         $run = 0;
-        $scheduler = new Wrapper(new class (2) extends Scheduler {
-            public function __construct(int $duration)
+        $scheduler = new Wrapper(new class (2, new TestLogger) extends Scheduler {
+            public function __construct(int $duration, LoggerInterface $logger)
             {
-                parent::__construct($duration);
+                parent::__construct($duration, $logger);
                 $this->sleeper = new class () extends Sleeper {
                     public function snooze(int $seconds) : void
                     {
@@ -84,7 +89,7 @@ return function () : Generator {
         $scheduler->process();
         $output = trim(ob_get_clean());
         assert($run === 1);
-        assert($output === "Skipping test due to RunAt configuration.");
+        assert(strpos($output, "Skipping test due to RunAt configuration.") !== false);
     };
 
     /** We can override options and get the currently set value */
@@ -107,7 +112,7 @@ return function () : Generator {
         ob_start();
         $scheduler->process();
         $output = trim(ob_get_clean());
-        assert($output === 'I ran!');
+        assert(strpos($output, 'I ran!') !== false);
     };
 
     /** A random class method can be used as a task */
@@ -123,7 +128,7 @@ return function () : Generator {
         ob_start();
         $scheduler->process();
         $output = trim(ob_get_clean());
-        assert($output === 'I ran!');
+        assert(strpos($output, 'I ran!') !== false);
     };
 
     /** A named function can be used as a task */
@@ -136,8 +141,22 @@ return function () : Generator {
         ob_start();
         $scheduler->process();
         $output = trim(ob_get_clean());
-        assert($output === 'I ran!');
+        assert(strpos($output, 'I ran!') !== false);
     };
+
+    /** When a task is still running, the exclusive lock prevents it running twice */
+    yield function () use ($scheduler) {
+        $test = function () {
+            sleep(1);
+        };
+        $scheduler->offsetSet('test', $test);
+        file_put_contents(sys_get_temp_dir()."/croney.".md5('test').'.lock', '1');
+        ob_start();
+        $scheduler->process();
+        $output = trim(ob_get_clean());
+        unlink(sys_get_temp_dir()."/croney.".md5('test').'.lock');
+        assert(strpos($output, "Couldn't aquire lock for test, skipping on this iteration.") !== false);
+    };        
 
     /** The Sleeper can snooze and return current time */
     yield function () {
