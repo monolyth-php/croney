@@ -150,11 +150,11 @@ return function () : Generator {
             sleep(1);
         };
         $scheduler->offsetSet('test', $test);
-        file_put_contents(sys_get_temp_dir()."/croney.".md5('test').'.lock', '1');
+        file_put_contents(sys_get_temp_dir()."/croney.".md5(getcwd().':test').'.lock', '1');
         ob_start();
         $scheduler->process();
         $output = trim(ob_get_clean());
-        unlink(sys_get_temp_dir()."/croney.".md5('test').'.lock');
+        unlink(sys_get_temp_dir()."/croney.".md5(getcwd().':test').'.lock');
         assert(strpos($output, "Couldn't aquire lock for test, skipping on this iteration.") !== false);
     };        
 
