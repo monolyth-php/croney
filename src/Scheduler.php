@@ -77,15 +77,22 @@ class Scheduler extends ArrayObject
                 return;
             }
             if (!$always && !$this->shouldRun($job)) {
-                echo "Skipping $idx due to RunAt configuration.\n";
+                if ($verbose) {
+                    $this->logger->info("Skipping $idx due to RunAt configuration.");
+                }
                 return;
             }
             if ($verbose) {
-                echo "Starting $idx...";
+                $this->logger->info("Starting $idx...");
             }
-            $fp = fopen("$tmp/".md5($idx).'.lock', 'w+');
-            flock($fp, LOCK_EX);
-
+            $lockfile = "$tmp/croney.".md5($idx).'.lock';
+            if (file_exists($lockfile)) {
+                if ($verbose) {
+                    $this->logger->warning("Couldn't aquire lock for $idx, skipping on this iteration.");
+                }
+                return;
+            }
+            file_put_contents($lockfile, '1');
             try {
                 call_user_func($job);
             } catch (Exception $e) {
@@ -96,10 +103,9 @@ class Scheduler extends ArrayObject
                     $e->getLine()
                 ));
             }
-            flock($fp, LOCK_UN);
-            fclose($fp);
+            unlink($lockfile);
             if ($verbose) {
-                echo " [done]\n";
+                $this->logger->info("$idx: done.");
             }
         });
         if (--$this->duration > 0) {
