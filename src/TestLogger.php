@@ -3,6 +3,7 @@
 namespace Monolyth\Croney;
 
 use Stringable;
+use Gentry\Gentry\Untestable;
 
 class TestLogger extends ErrorLogger
 {
