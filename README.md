@@ -211,18 +211,20 @@ run starts, causing mails to be handled twice. Obviously not desirable.
 
 Croney "locks" each task prior to running, and does not attempt to re-run as
 long as it is locked. If a run fails due to locking, a warning is logged and the
-task is retried periodically for as long as the cronjob runs. If the task
-couldn't be run before the cronjob ends, an error is logged.
+task is retried periodically for as long as the cronjob runs (assuming its RunAt
+configuration allows that).
 
-The locking is done based on an MD5 hash of the reflected callable, so any
-changes between runs will invalidate any existing locks.
+The locking is done based on an MD5 hash of the task name. This includes the
+current working directory, so multiple Croney instances for different projects
+shouldn't conflict.
 
 ## Error handling
 You can pass an instance of `Psr\Log\LoggerInterface` as an argument to the
 `Scheduler` constructor. This will then be used to log any messages triggered by
 tasks, in the way that you specified.
 
-If no logger was defined, all messages go to `STDOUT` or `STDERR`.
+If no logger was defined, all messages go to `STDOUT` or `STDERR` (see the
+included `ErrorLogger`).
 
 Should your individual tasks also need logging, you'll need to supply them with
 their own instance of a logger.
@@ -267,3 +269,7 @@ $scheduler = new class (2) extends Scheduler {
     }
 };
 ```
+
+Croney also includes a `TestLogger` which simply echoes logged messages, so you
+may use output buffering to check them in tests.
+
