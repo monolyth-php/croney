@@ -11,6 +11,7 @@ use Monolyth\Cliff\Command;
 use Closure;
 use ReflectionFunction;
 use ReflectionObject;
+use Monolyth\Disclosure\Factory;
 
 class Scheduler extends ArrayObject
 {
@@ -46,7 +47,7 @@ class Scheduler extends ArrayObject
     public function offsetSet(mixed $name, mixed $job) : void
     {
         if (is_string($job) && class_exists($job)) {
-            $job = new $job;
+            $job = class_exists(Factory::class) ? Factory::build($job) : new $job;
         }
         if (!is_callable($job)) {
             $this->logger->critical("Job $name is not callable.");
