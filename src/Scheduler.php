@@ -97,7 +97,7 @@ class Scheduler extends ArrayObject
             try {
                 call_user_func($job);
             } catch (Exception $e) {
-                $this->logger->critial(sprintf(
+                $this->logger->critical(sprintf(
                     "%s in file %s on line %d",
                     $e->getMessage(),
                     $e->getFile(),
