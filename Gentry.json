@@ -1,0 +1,6 @@
+{
+    "src": "src",
+    "test": "vendor/bin/toast",
+    "generator": "Gentry\\Toast",
+    "output": "tests"
+}

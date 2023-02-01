@@ -5,52 +5,56 @@ namespace Monolyth\Croney;
 use InvalidArgumentException;
 use Exception;
 use ArrayObject;
-use Monolog\Logger;
+use Psr\Log\LoggerInterface;
+use GetOpt\GetOpt;
+use Monolyth\Cliff\Command;
+use Closure;
+use ReflectionFunction;
+use ReflectionObject;
+use Monolyth\Disclosure\Factory;
 
 class Scheduler extends ArrayObject
 {
-    /** @var int */
-    private $now;
-    /** @var int */
-    private $minutes = 1;
-    /** @var array */
-    private $jobs = [];
-    /** @var Monolog\Logger */
-    private $logger;
+    protected Sleeper $sleeper;
+
+    private array $jobs = [];
+
+    private static ?GetOpt $getopt;
+
+    private static ?array $options = null;
 
     /**
-     * Constructor. Optionally pass a Monolog\Logger.
+     * Constructor. Optionally pass a duration (in minutes) and a Logger
+     * implementing Psr\Log\LoggerInterface (e.g. Monolog\Logger).
      *
-     * @param Monolog\Logger|null $logger
+     * @param Psr\Log\LoggerInterface|null $logger
+     * @param int $duration
      * @return void
      */
-    public function __construct(Logger $logger = null)
+    public function __construct(private int $duration = 1, private ?LoggerInterface $logger = null)
     {
-        $this->now = strtotime(date('Y-m-d H:i:00'));
         $this->logger = $logger ?? new ErrorLogger;
+        $this->sleeper = new Sleeper;
     }
 
     /**
-     * Getter. Only accepts `"logger"` as a property.
-     *
-     * @param string $property
-     * @return Monolog\Logger|null
-     */
-    public function __get(string $property)
-    {
-        return $property == 'logger' ? $this->logger : null;
-    }
-
-    /**
-     * Add a job to the schedule.
+     * Add a job to the schedule. Note the type hints do not reflect the actual
+     * requirements, to satisfy compatibility with ArrayObject::offsetSet.
      *
      * @param string $name
      * @param callable $job The job.
      */
-    public function offsetSet($name, $job)
+    public function offsetSet(mixed $name, mixed $job) : void
     {
+        if (is_string($job) && class_exists($job)) {
+            $job = class_exists(Factory::class) ? Factory::build($job) : new $job;
+        }
         if (!is_callable($job)) {
+            $this->logger->critical("Job $name is not callable.");
             throw new InvalidArgumentException('Each job must be callable');
+        }
+        if (is_numeric($name)) {
+            $this->logger->warning("Job $name has a numeric index; it is better to use named indexes.");
         }
         $this->jobs[$name] = $job;
     }
@@ -62,89 +66,106 @@ class Scheduler extends ArrayObject
      */
     public function process() : void
     {
-        global $argv;
         $specific = null;
-        foreach ($argv as $arg) {
-            if (preg_match('@--job=(.*?)$@', $arg, $match)) {
-                $specific = $match[1];
-            }
-        }
+        $options = $this->getOptions();
+        $specific = $options->getOption('j');
         $start = time();
         $tmp = sys_get_temp_dir();
-        array_walk($this->jobs, function ($job, $idx) use ($tmp, $specific, $argv) {
+        $verbose = $options->getOption('v');
+        $always = $options->getOption('a');
+        array_walk($this->jobs, function ($job, $idx) use ($tmp, $specific, $verbose, $always) : void {
             if (isset($specific) && $specific !== $idx) {
                 return;
             }
-            if (in_array('--verbose', $argv) || in_array('-v', $argv)) {
-                echo "Starting $idx...";
+            if (!$always && !$this->shouldRun($job)) {
+                if ($verbose) {
+                    $this->logger->info("Skipping $idx due to RunAt configuration.");
+                }
+                return;
             }
-            $fp = fopen("$tmp/".md5($idx).'.lock', 'w+');
-            flock($fp, LOCK_EX);
+            if ($verbose) {
+                $this->logger->info("Starting $idx...");
+            }
+            $lockfile = "$tmp/croney.".md5(getcwd().':'.$idx).'.lock';
+            if (file_exists($lockfile)) {
+                if ($verbose) {
+                    $this->logger->warning("Couldn't aquire lock for $idx, skipping on this iteration.");
+                }
+                return;
+            }
+            file_put_contents($lockfile, '1');
             try {
-                $job->call($this);
-            } catch (NotDueException $e) {
+                call_user_func($job);
             } catch (Exception $e) {
-                $this->logger->addCritial(sprintf(
+                $this->logger->critical(sprintf(
                     "%s in file %s on line %d",
                     $e->getMessage(),
                     $e->getFile(),
                     $e->getLine()
                 ));
             }
-            flock($fp, LOCK_UN);
-            fclose($fp);
-            if (in_array('--verbose', $argv) || in_array('-v', $argv)) {
-                echo " [done]\n";
+            unlink($lockfile);
+            if ($verbose) {
+                $this->logger->info("$idx: done.");
             }
         });
-        if (--$this->minutes > 0) {
-            $wait = max(60 - (time() - $start), 0);
-            if (!getenv('TOAST')) {
-                sleep($wait);
-            }
-            $this->now += 60;
+        if (--$this->duration > 0) {
+            $this->sleeper->snooze(max(60 - (time() - $start), 0));
             $this->process();
         }
     }
 
     /**
-     * The job should run "at" the specified time.
+     * Get all CLI options for the scheduler.
      *
-     * @param string $datestring A string parsable by `date` that should match
-     *  the current script runtime for the job to execute.
-     * @return void
-     * @throws Monolyth\Croney\NotDueException if the task isn't due yet.
+     * @return GetOpt\GetOpt
      */
-    public function at(string $datestring) : void
+    public static function getOptions() : GetOpt
     {
-        global $argv;
-        if (in_array('--all', $argv) || in_array('-a', $argv)) {
-            return;
+        if (!isset(self::$getopt)) {
+            self::$getopt = new GetOpt([
+                ['j', 'job', GetOpt::REQUIRED_ARGUMENT],
+                ['v', 'verbose', GetOpt::NO_ARGUMENT],
+                ['a', 'all', GetOpt::NO_ARGUMENT],
+            ]);
+            self::$getopt->process(self::$options);
         }
-        $date = date($datestring, $this->now);
-        if (!preg_match("@$date$@", date('Y-m-d H:i', $this->now))) {
-            throw new NotDueException;
-        }
+        return self::$getopt;
     }
 
     /**
-     * Set the number of minutes this process should run.
+     * Override options. This is useful when calling the scheduler from a
+     * non-cron context, e.g. during tests or when your own cron script accepts
+     * different parameters.
      *
-     * All jobs are run every minute, hence setting this to '5' would cause the
-     * loop to run 5 times. After each loop, the scheduler `sleep`s for sixty
-     * seconds (minus the seconds it took the loop to run) before starting the
-     * next run.
-     *
-     * Note that this does not guarantee the scheduler will resume _exactly_ on
-     * the next minute. If your task involves handling based on e.g. `time()`,
-     * make sure to round/truncate/check its value.
-     *
-     * @param int $minutes
+     * @param array $options Array of option overrides.
      * @return void
      */
-    public function setDuration(int $minutes) : void
+    public static function overrideOptions(array $options) : void
     {
-        $this->minutes = $minutes;
+        self::$options = $options;
+        self::$getopt = null;
+    }
+
+    private function shouldRun(callable $job) : bool
+    {
+        if ($job instanceof Closure || (is_string($job) && function_exists($job))) {
+            $reflection = new ReflectionFunction($job);
+        } else {
+            if (is_array($job)) {
+                list($job, $method) = $job;
+            } else {
+                $method = '__invoke';
+            }
+            $reflection = (new ReflectionObject($job))->getMethod($method);
+        }
+        $attributes = $reflection->getAttributes(RunAt::class);
+        if (!$attributes) {
+            return true;
+        }
+        $runAt = $attributes[0]->newInstance()->getDatetimeString();
+        $date = $this->sleeper->getDate($runAt);
+        return preg_match("@$date$@", $this->sleeper->getDate());
     }
 }
 
