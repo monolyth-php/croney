@@ -13,7 +13,7 @@
         "php": ">=7.2"
     },
     "require-dev": {
-        "gentry/gentry": "^0.13.0",
+        "gentry/gentry": "^0.16.10",
         "toast/unit": "^1.3"
     },
     "suggest": {
