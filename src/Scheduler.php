@@ -27,8 +27,8 @@ class Scheduler extends ArrayObject
      * Constructor. Optionally pass a duration (in minutes) and a Logger
      * implementing Psr\Log\LoggerInterface (e.g. Monolog\Logger).
      *
-     * @param Psr\Log\LoggerInterface|null $logger
      * @param int $duration
+     * @param Psr\Log\LoggerInterface|null $logger
      * @return void
      */
     public function __construct(private int $duration = 1, private ?LoggerInterface $logger = null)
